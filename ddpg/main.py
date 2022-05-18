@@ -1,7 +1,11 @@
-import ddpg
+import os, sys
+
 import tensorflow as tf
 import numpy as np
 from ddpg import DDDPGAgent
+
+sys.path.append("..")
+from env import Env
 
 # To store reward history of each episode
 ep_reward_list = []
@@ -9,6 +13,7 @@ ep_reward_list = []
 avg_reward_list = []
 
 agent = DDDPGAgent(23*23, 37, 1, 0, 50000, 64)
+env = Env()
 total_episodes = 1
 
 # Takes about 4 min to train
@@ -25,9 +30,9 @@ for ep in range(total_episodes):
         tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state.flatten()), 0)
 
         action = agent.policy(tf_prev_state)
-        # Recieve state and reward from environment.
-        state, reward = np.zeros([23,23]).flatten(), 1
-        # print(action)
+        # Recieve state and reward from environment.        
+        
+        state, reward = env.step(action)        
 
         agent.buffer.record((prev_state.flatten(), action[0], reward, state.flatten()))
         episodic_reward += reward
@@ -48,10 +53,3 @@ for ep in range(total_episodes):
     avg_reward = np.mean(ep_reward_list[-40:])
     print("Episode * {} * Avg Reward is ==> {}".format(ep, avg_reward))
     avg_reward_list.append(avg_reward)
-
-# Plotting graph
-# Episodes versus Avg. Rewards
-plt.plot(avg_reward_list)
-plt.xlabel("Episode")
-plt.ylabel("Avg. Epsiodic Reward")
-plt.show()

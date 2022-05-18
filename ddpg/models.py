@@ -44,7 +44,7 @@ class Actor:
 
     def getModel(self):
         # Initialize weights in half value (0.5) +- 0.003
-        last_init = tf.random_uniform_initializer(minval=0.503, maxval=0.497)
+        last_init = tf.keras.initializers.RandomUniform(minval=0., maxval=1, seed=None)
 
         inputs = layers.Input(shape=(self.num_state,))
         out = layers.Dense(256, activation="relu")(inputs)

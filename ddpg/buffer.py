@@ -26,8 +26,8 @@ class Buffer:
         # Set index to zero if buffer_capacity is exceeded,
         # replacing old records
         index = self.buffer_counter % self.buffer_capacity
-        print(index)
-        print(obs_tuple[0].shape)
+        # print(index)
+        # print(obs_tuple[0].shape)
 
         self.state_buffer[index] = obs_tuple[0]
         self.action_buffer[index] = obs_tuple[1]
@@ -41,5 +41,5 @@ class Buffer:
         record_range = min(self.buffer_counter, self.buffer_capacity)
         # Randomly sample indices
         batch_indices = np.random.choice(record_range, self.batch_size)
-        print("record_range {} y batch_size {} ".format(record_range, self.batch_size))
+        # print("record_range {} y batch_size {} ".format(record_range, self.batch_size))
         return self.state_buffer[batch_indices], self.action_buffer[batch_indices], self.reward_buffer[batch_indices], self.next_state_buffer[batch_indices]
