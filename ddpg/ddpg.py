@@ -14,8 +14,7 @@ class DDDPGAgent:
                     batch_size,
                     std_dev = 0.2,
                     critic_lr = 0.002,
-                    actor_lr = 0.001,
-                    total_episodes = 100,
+                    actor_lr = 0.001,                    
                     gamma = 0.99,
                     tau = 0.005):
         self.num_states = num_states
@@ -24,8 +23,7 @@ class DDDPGAgent:
         self.lower_bound = lower_bound
         self.std_dev = std_dev
         self.critic_lr = critic_lr
-        self.actor_lr = actor_lr
-        self.total_episodes = total_episodes
+        self.actor_lr = actor_lr        
         self.gamma = gamma
         self.tau = tau
         self.buffer_capacity = buffer_capacity
