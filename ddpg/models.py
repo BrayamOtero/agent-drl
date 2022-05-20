@@ -43,12 +43,31 @@ class Actor:
         self.upper_bound = upper_bound
 
     def getModel(self):
+        """
+            Para generar un path por cada src,dst, se tendra encuenta los la tm y la tupla src,dst
+            La tm va estar en una nn separa da a la tupla, para que luego se concatenen, como en:
+            https://github.com/MLJejuCamp2017/DRL_based_SelfDrivingCarControl
+        """
         # Initialize weights in half value (0.5) +- 0.003
-        last_init = tf.keras.initializers.RandomUniform(minval=0., maxval=1, seed=None)
+        last_init = tf.random_uniform_initializer(minval=0.5-0.003, maxval=0.5+0.003)
 
+        #Se recibe la tm y la tupla concatenadas
         inputs = layers.Input(shape=(self.num_state,))
-        out = layers.Dense(256, activation="relu")(inputs)
-        out = layers.Dense(256, activation="relu")(out)
+        
+        #Separamos la tm de las tuplas para tratarlas diferente
+        in_tm = layers.Lambda(lambda x: x[:, :self.num_state-1])(inputs)
+        out_tm = layers.Dense(512, activation="relu")(in_tm)
+        out_tm = layers.Dense(512, activation="relu")(out_tm)
+
+        #Aqui se separa la tupla de nodos, que es el ultimo valor
+        in_tuple = layers.Lambda(lambda x: x[:, -1:])(inputs)
+        out_tup = layers.Dense(50, activation="relu")(in_tuple)
+
+        #Se unen las dos nn
+        concat = layers.Concatenate()([out_tm, out_tup])
+
+        out = layers.Dense(256, activation="relu")(concat)
+
         outputs = layers.Dense(self.num_action, activation="tanh", kernel_initializer=last_init)(out)
 
         # Our upper bound is 2.0 for Pendulum.

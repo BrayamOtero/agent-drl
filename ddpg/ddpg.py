@@ -42,7 +42,7 @@ class DDDPGAgent:
         self.critic_optimizer = tf.keras.optimizers.Adam(self.critic_lr)
         self.actor_optimizer = tf.keras.optimizers.Adam(self.actor_lr)
 
-        self.buffer = Buffer(num_states, num_actions, self.buffer_capacity, self.batch_size)
+        self.buffer = Buffer(self.num_states, self.num_actions, self.buffer_capacity, self.batch_size)
 
         self.ou_noise = OUActionNoise(mean = np.zeros(num_actions), std_deviation=float(self.std_dev)*np.ones(num_actions))
 
