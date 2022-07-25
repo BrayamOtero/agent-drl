@@ -1,0 +1,104 @@
+import tensorflow as tf
+from tensorflow.keras import layers
+
+from keras.models import Sequential
+import math
+
+class Critic:
+    """
+        Recibe como entrada el estado y las acciones
+    """
+    def __init__(self, input_state_size, input_action_size):
+        super(Critic, self).__init__()
+        self.input_state_size = input_state_size
+        self.input_action_size = input_action_size
+
+    def getModel(self):
+         # State as input
+        state_input = layers.Input(shape=(self.input_state_size))
+        size_mx = int(math.sqrt(self.input_state_size-1))
+        #Separamos la tm de las tuplas para tratarlas diferente
+        in_tm = layers.Lambda(lambda x: x[:, :self.input_state_size-1])(state_input)
+        #Volver a formar la matrix
+        reshape = layers.Reshape((size_mx, size_mx,1), input_shape = (1,self.input_state_size-1))(in_tm)
+        #CNN
+        conv = layers.Conv2D(32, kernel_size=3, activation='relu', input_shape=(size_mx,size_mx,1))(reshape)
+        conv = layers.BatchNormalization()(conv)
+        conv = layers.MaxPooling2D(pool_size=(2,2), strides=1)(conv)
+        out_tm = layers.Flatten()(conv)
+        out_tm = layers.Dropout(.2, input_shape =(1,))(out_tm)
+
+        in_tuple = layers.Lambda(lambda x: x[:, -1:])(state_input)
+        out_tup = layers.Dense(50, activation="relu")(in_tuple)
+
+        #Se unen las dos nn
+        concat = layers.Concatenate()([out_tm, out_tup])
+
+        state_out = layers.Dense(256, activation="relu")(concat)
+
+        # Action as input
+        action_input = layers.Input(shape=(self.input_action_size))
+        action_out = layers.Dense(32, activation="relu")(action_input)
+
+        # Both are passed through seperate layer before concatenating
+        concat = layers.Concatenate()([state_out, action_out])
+
+        out = layers.Dense(256, activation="relu")(concat)
+        out = layers.Dense(256, activation="relu")(out)
+        outputs = layers.Dense(self.input_action_size)(out)
+
+        # Outputs single value for give state-action
+        model = tf.keras.Model([state_input, action_input], outputs)
+
+        return model
+
+class Actor:
+    """
+        upper_bound es el valor maximo de las acciones
+    """
+    def __init__(self, num_state, num_action, upper_bound):
+        super(Actor, self).__init__()
+        self.num_state = num_state
+        self.num_action = num_action
+        self.upper_bound = upper_bound
+
+    def getModel(self):
+        """
+            Para generar un path por cada src,dst, se tendra encuenta los la tm y la tupla src,dst
+            La tm va estar en una nn separa da a la tupla, para que luego se concatenen, como en:
+            https://github.com/MLJejuCamp2017/DRL_based_SelfDrivingCarControl
+        """
+        # Initialize weights in half value (0.5) +- 0.003
+        last_init = tf.random_uniform_initializer(minval=0.5-0.003, maxval=0.5+0.003)
+
+        #Se recibe la tm y la tupla concatenadas
+        inputs = layers.Input(shape=(self.num_state,))
+        size_mx = int(math.sqrt(self.num_state-1))
+        #Separamos la tm de las tuplas para tratarlas diferente
+        in_tm = layers.Lambda(lambda x: x[:, :self.num_state-1])(inputs)
+        #Volver a formar la matrix
+        reshape = layers.Reshape((size_mx, size_mx,1), input_shape = (1,self.num_state-1))(in_tm)
+        #CNN
+        conv = layers.Conv2D(32, kernel_size=3, activation='relu', input_shape=(size_mx,size_mx,1))(reshape)
+        conv = layers.BatchNormalization()(conv)
+        conv = layers.MaxPooling2D(pool_size=(2,2), strides=1)(conv)
+        out_tm = layers.Flatten()(conv)
+        out_tm = layers.Dropout(.2, input_shape =(1,))(out_tm)
+
+        # out_tm = layers.Dense(64, activation="relu")(out_tm)
+
+        #Aqui se separa la tupla de nodos, que es el ultimo valor
+        in_tuple = layers.Lambda(lambda x: x[:, -1:])(inputs)
+        out_tup = layers.Dense(50, activation="relu")(in_tuple)
+
+        #Se unen las dos nn
+        concat = layers.Concatenate()([out_tm, out_tup])
+
+        out = layers.Dense(256, activation="relu")(concat)
+
+        outputs = layers.Dense(self.num_action, activation="tanh", kernel_initializer=last_init)(out)
+
+        # Our upper bound is 2.0 for Pendulum.
+        outputs = outputs * self.upper_bound
+        model = tf.keras.Model(inputs, outputs)
+        return model
