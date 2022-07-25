@@ -7,7 +7,7 @@ import math
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 class Environment(object):
-    def __init__(self):
+    def __init__(self, step_per_epoch=30):
         
         self.act_space = [i for i in range(20)]
         self.topo_nodes = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
@@ -32,6 +32,7 @@ class Environment(object):
                         self.P[state][action].append((new_state, reward, done))
         
         self.tm = self.normalizeTM(0, 1)
+        self.step_per_epoch = step_per_epoch
 
     def zigZag(self):
         # a=time.time()
@@ -133,7 +134,7 @@ class Environment(object):
         s, r, d = self.P[int(self.s)][int(a_disct)][0]
 
         self.s = s
-        d = self.cont_steps == 30
+        d = self.cont_steps == self.step_per_epoch
         if d:
             self.cont_steps = 0
         return (self.getState(self.s), r, d, '')
